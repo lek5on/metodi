@@ -1,0 +1,69 @@
+// ЗАДАНИЕ 2
+// Функция для вычисления суммы ряда phi(x) с заданной точностью - epsilon
+//double phi(double x, double epsilon) {
+//    double sum = 0.0;  // инициализация суммы ряда
+//    double term;       // переменная для хранения текущего члена ряда
+//    int k = 1;         // начальное значение индекса k
+//
+//    // цикл для вычисления суммы ряда до тех пор, пока модуль текущего члена больше epsilon
+//    do {
+//        term = 1.0 / (k * (k + x));  // вычисление текущего члена ряда
+//        sum += term;                 // добавление текущего члена к сумме
+//        k++;                         
+//    } while (fabs(term) > epsilon);  // проверка условия завершения цикла
+//
+//    return sum;  
+//}
+//
+//// с использованием соотношения 1/(k*(k+1)) = 1/k - 1/(k+1)
+//double phi_1(double epsilon) {
+//    double sum = 0.0;  
+//    double term;       
+//    int k = 1;        
+//
+//
+//    do {
+//        term = 1.0 / k - 1.0 / (k + 1);  
+//        sum += term;                     
+//        k++;                            
+//    } while (fabs(term) > epsilon);      
+//
+//    return sum;  
+//}
+//
+//// для вычисления разности phi(x) - phi(1) с использованием более быстро сходящегося ряда
+//double phi_diff(double x, double epsilon) {
+//    double sum = 0.0;  
+//    double term;       
+//    int k = 1;         
+//
+//    do {
+//        term = (1.0 - x) / (k * (k + x) * (k + 1));  //упростили выражение phi(x) - phi(1) 
+//        sum += term;                                 
+//        k++;                                         
+//    } while (fabs(term) > epsilon);                  
+//
+//    return sum;  
+//}
+//
+//int main() {
+//    double epsilon = 0.5e-8;  // допустимая ошибка
+//
+//    cout << "x from 0.1 to 1" << endl;
+//    for (double x = 0.0; x <= 1.0; x += 0.1) {
+//        double result = phi(x, epsilon);  
+//        cout << "phi(" << x << ") = " << result << endl;  
+//    }
+//
+//    cout << endl << "proof using the ratio:" << endl;
+//    double phi_1_result = phi_1(epsilon);
+//    cout << "phi(1) = " << phi_1_result << endl << endl;
+//
+//    cout << "phi(x) - phi(1):" << endl;
+//    for (double x = 0.0; x <= 1.0; x += 0.1) {
+//        double diff = phi_diff(x, epsilon);
+//        cout << "phi(" << x << ") - phi(1) = " << diff << endl;
+//    }
+//
+//    //отклонения связаны с численными погрешностями из-за конечного числа итераций
+//}

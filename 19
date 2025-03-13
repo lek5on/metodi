@@ -1,12 +1,12 @@
+
 #include <iostream>
 #include <vector>
 #include <string>
 #include <sstream>
+#include <algorithm>
 #include <random>
 #include <fstream>
 #include <ctime>
-#include <algorithm>
-
 using namespace std;
 
 // Глобальный счетчик операций
@@ -18,11 +18,11 @@ void resetCounter() { operationCount = 0; }
 // Получение значения счетчика операций
 int getOperationCount() { return operationCount; }
 
-// Преобразование символа (0-9, A-I) в число
+// Преобразование символа (0-9, A-I, a-i) в число 
 int charToInt(char c) {
     if (c >= '0' && c <= '9') return c - '0';
     if (c >= 'A' && c <= 'I') return 10 + (c - 'A');
-    return -1;
+    return 10 + (c - 'a');
 }
 
 // Преобразование числа (0..18) в символ (0-9, A-I)
@@ -31,12 +31,12 @@ char intToChar(int x) {
     return char('A' + (x - 10));
 }
 
-// Удаление ведущих нулей в массиве (старших разрядов)
+// Удаление ведущих нулей
 void removeLeadingZeros(vector<int>& num) {
     while (num.size() > 1 && num[0] == 0) num.erase(num.begin());
 }
 
-// Функция сложения двух длинных чисел в формате массива (base 19)
+// Сложение в base-19
 vector<int> addArrays(const vector<int>& A, const vector<int>& B) {
     vector<int> a = A, b = B;
     if (a.size() < b.size()) a.insert(a.begin(), b.size() - a.size(), 0);
@@ -45,21 +45,21 @@ vector<int> addArrays(const vector<int>& A, const vector<int>& B) {
     int carry = 0;
     operationCount++;
     for (int i = a.size() - 1; i >= 0; i--) {
-        int sum = a[i] + b[i];
-        sum += carry;
+        int sum = a[i] + b[i] + carry;
         carry = sum / 19;
-        sum = sum % 19;
-        result[i] = sum;
+        result[i] = sum % 19;
         operationCount += 9;
     }
     if (carry > 0) {
         operationCount++;
         result.insert(result.begin(), carry);
-    } else operationCount++;
+    }
+    else operationCount++;
     removeLeadingZeros(result);
     return result;
 }
 
+// Вычитание в base-19
 vector<int> subArrays(const vector<int>& A, const vector<int>& B, bool& negative) {
     vector<int> a = A, b = B;
     if (a.size() < b.size()) a.insert(a.begin(), b.size() - a.size(), 0);
@@ -86,17 +86,14 @@ vector<int> subArrays(const vector<int>& A, const vector<int>& B, bool& negative
         swap(a, b);
         operationCount += 4;
     }
-    else {
-        operationCount++;
-    }
+    else operationCount++;
 
     vector<int> result(a.size());
     int borrow = 0;
     operationCount++;
     for (int i = a.size() - 1; i >= 0; i--) {
         operationCount++;
-        int diff = a[i] - b[i];
-        diff -= borrow;
+        int diff = a[i] - b[i] - borrow;
         operationCount += 4;
         if (diff < 0) {
             diff += 19;
@@ -107,23 +104,25 @@ vector<int> subArrays(const vector<int>& A, const vector<int>& B, bool& negative
             borrow = 0;
             operationCount += 2;
         }
-        result[i] = diff; operationCount++;
+        result[i] = diff;
+        operationCount++;
     }
     removeLeadingZeros(result);
     return result;
 }
 
-// Функция сдвига в base-19 (умножение на 19^shiftCount)
+// Сдвиг в base-19
 vector<int> sh(const vector<int>& A, int shiftCount) {
-    vector<int> result = A; operationCount++;
+    vector<int> result = A;
+    operationCount++;
     for (int i = 0; i < shiftCount; i++) {
-        result.push_back(0); 
-        operationCount++; 
+        result.push_back(0);
+        operationCount++;
     }
     return result;
 }
 
-// Разбить число (массив) на две части: старшие и младшие разряды
+// Разбиение числа
 pair<vector<int>, vector<int>> splitNumber(const vector<int>& num, int half) {
     int n = num.size(), s = max(0, n - half);
     vector<int> first(num.begin(), num.begin() + s), second(num.begin() + s, num.end());
@@ -131,7 +130,7 @@ pair<vector<int>, vector<int>> splitNumber(const vector<int>& num, int half) {
     return { first, second };
 }
 
-// Рекурсивная функция умножения (алгоритм Карацубы)
+// Умножение (Карацуба) в base-19
 vector<int> multArrays(const vector<int>& A, const vector<int>& B) {
     vector<int> a = A, b = B;
     if (a.size() < b.size()) a.insert(a.begin(), b.size() - a.size(), 0);
@@ -140,15 +139,15 @@ vector<int> multArrays(const vector<int>& A, const vector<int>& B) {
     int n = max(a.size(), b.size());
     operationCount += 4;
     if (n == 1) {
-        int prod = a[0] * b[0]; 
+        int prod = a[0] * b[0];
         operationCount += 3;
-        vector<int> result; 
-        if (prod < 19) { 
-            result.push_back(prod); 
-            operationCount += 2; 
+        vector<int> result;
+        if (prod < 19) {
+            result.push_back(prod);
+            operationCount += 2;
         }
-        else { 
-            result.push_back(prod / 19); 
+        else {
+            result.push_back(prod / 19);
             result.push_back(prod % 19);
             operationCount += 5;
         }
@@ -161,122 +160,144 @@ vector<int> multArrays(const vector<int>& A, const vector<int>& B) {
         operationCount += 3;
     }
     else operationCount++;
+    
     pair<vector<int>, vector<int>> splittedA = splitNumber(a, half), splittedB = splitNumber(b, half);
     vector<int> a1 = splittedA.first, a2 = splittedA.second, b1 = splittedB.first, b2 = splittedB.second;
-    vector<int> p1 = multArrays(a1, b1), p2 = multArrays(a2, b2), a1PlusA2 = addArrays(a1, a2), b1PlusB2 = addArrays(b1, b2);
+    vector<int> p1 = multArrays(a1, b1), p2 = multArrays(a2, b2);
+    vector<int> a1PlusA2 = addArrays(a1, a2), b1PlusB2 = addArrays(b1, b2);
     vector<int> p3 = multArrays(a1PlusA2, b1PlusB2), p1PlusP2 = addArrays(p1, p2);
     bool negative;
     operationCount++;
     vector<int> p4 = subArrays(p3, p1PlusP2, negative);
-    vector<int> term1 = sh(p1, 2 * half), term2 = sh(p4, half), sum12 = addArrays(term1, term2);
-    vector<int> result = addArrays(sum12, p2); removeLeadingZeros(result);
+    vector<int> term1 = sh(p1, 2 * half), term2 = sh(p4, half);
+    vector<int> sum12 = addArrays(term1, term2);
+    vector<int> result = addArrays(sum12, p2);
+    removeLeadingZeros(result);
     return result;
 }
 
-// Преобразование массива цифр в 19-ричную строку
-string arrayToHexString(const vector<int>& num) {
-    vector<int> tmp = num; removeLeadingZeros(tmp);
-    ostringstream oss; for (int digit : tmp) oss << intToChar(digit);
+// Массив в строку base-19
+string arrayToBase19String(const vector<int>& num) {
+    vector<int> tmp = num;
+    removeLeadingZeros(tmp);
+    ostringstream oss;
+    for (int digit : tmp) oss << intToChar(digit);
     return oss.str();
 }
 
-// Преобразование 19-ричной строки в массив цифр
-vector<int> hexStringToArray(const string& s) {
-    vector<int> result; for (char c : s) result.push_back(charToInt(c));
-    removeLeadingZeros(result); return result;
-}
-
-// Преобразование десятичной строки в число (массив)
-vector<int> decimalStringToHexArray(const string& decStr) {
-    long long num = 0; for (char c : decStr) num = num * 10 + (c - '0');
-    vector<int> hexDigits; while (num > 0) { hexDigits.push_back(num % 19); num /= 19; }
-    reverse(hexDigits.begin(), hexDigits.end()); return hexDigits;
-}
-
-// Преобразование массива base19 в десятичное число
-long long hexArrayToDecimal(const vector<int>& num) {
-    long long result = 0; operationCount++; // Инициализация
-    for (int digit : num) { result = result * 19 + digit; operationCount += 2; } // Умножение и сложение
+// Строка base-19 в массив
+vector<int> base19StringToArray(const string& s) {
+    vector<int> result;
+    for (char c : s) result.push_back(charToInt(c));
+    removeLeadingZeros(result);
     return result;
 }
 
-// Генерация случайного длинного числа (в base 19) длиной n
-vector<int> generateRandomHexNumber(int n, mt19937& gen) {
+// Десятичная строка в массив base-19
+vector<int> decimalStringToBase19Array(const string& decStr) {
+    long long num = 0;
+    for (char c : decStr) num = num * 10 + (c - '0');
+    vector<int> digits;
+    while (num > 0) {
+        digits.push_back(num % 19);
+        num /= 19;
+    }
+    reverse(digits.begin(), digits.end());
+    return digits;
+}
+
+// Массив base-19 в десятичное число
+long long base19ArrayToDecimal(const vector<int>& num) {
+    long long result = 0;
+    operationCount++;
+    for (int digit : num) {
+        result = result * 19 + digit;
+        operationCount += 2;
+    }
+    return result;
+}
+
+// Генерация случайного числа в base-19
+vector<int> generateRandomBase19Number(int n, mt19937& gen) {
     uniform_int_distribution<int> dist(0, 18);
-    vector<int> result(n); result[0] = uniform_int_distribution<int>(1, 18)(gen);
+    vector<int> result(n);
+    result[0] = uniform_int_distribution<int>(1, 18)(gen);
     for (int i = 1; i < n; i++) result[i] = dist(gen);
     return result;
 }
 
-// Тестовые примеры для add, sub, sh
+// Тест операций
 void testOperations() {
-    cout << "Тестирование функций add, sub, sh:\n";
+    cout << "Тестирование функций add, sub, sh (base-19):\n";
     string sa, sb;
-    cout << "Введите первое число (19-ричная система): ";
+    cout << "Введите первое число (19-ричная система, 0-9, A-I): ";
     cin >> sa;
-    cout << "Введите второе число (19-ричная система): ";
+    cout << "Введите второе число (19-ричная система, 0-9, A-I): ";
     cin >> sb;
 
-    vector<int> a = hexStringToArray(sa), b = hexStringToArray(sb);
+    vector<int> a = base19StringToArray(sa), b = base19StringToArray(sb);
 
     resetCounter();
     vector<int> sumArr = addArrays(a, b);
-    cout << "Сумма: " << arrayToHexString(sumArr)
+    cout << "Сумма: " << arrayToBase19String(sumArr)
          << " (Операций: " << getOperationCount() << ")\n";
 
     resetCounter();
     bool negative;
     vector<int> diffArr = subArrays(a, b, negative);
-    cout << "Разность: " << (negative ? "-" : "") << arrayToHexString(diffArr)
-    << " (Операций: " << getOperationCount() << ")\n";
+    cout << "Разность: " << (negative ? "-" : "") << arrayToBase19String(diffArr)
+         << " (Операций: " << getOperationCount() << ")\n";
 
-resetCounter();
-int shiftCount;
-cout << "Введите количество сдвигов для операции sh: ";
-cin >> shiftCount;
-vector<int> shiftedArr = sh(a, shiftCount);
-cout << "Результат сдвига на " << shiftCount << " позиций: " << arrayToHexString(shiftedArr)
-    << " (Операций: " << getOperationCount() << ")\n";
+    resetCounter();
+    vector<int> shifted = sh(a, 2);
+    cout << "Сдвиг: " << arrayToBase19String(shifted)
+         << " (Операций: " << getOperationCount() << ")\n";
 }
 
-// Основная функция
+// Тест умножения
+void testMultiplication() {
+    cout << "\nТест умножения (base-19):\n";
+    string a1_dec = "8673", b1_dec = "5391";
+    vector<int> a1_base19 = decimalStringToBase19Array(a1_dec), 
+               b1_base19 = decimalStringToBase19Array(b1_dec);
+    resetCounter();
+    vector<int> prod1 = multArrays(a1_base19, b1_base19);
+    cout << "mult(" << a1_dec << " -> " << arrayToBase19String(a1_base19)
+         << ", " << b1_dec << " -> " << arrayToBase19String(b1_base19)
+         << ") = " << arrayToBase19String(prod1) << " (в 19-ричной)\n";
+    cout << "В десятичной системе: " << base19ArrayToDecimal(prod1) << endl;
+
+    resetCounter();
+    string a2_dec = "673", b2_dec = "391";
+    vector<int> a2_base19 = decimalStringToBase19Array(a2_dec), 
+               b2_base19 = decimalStringToBase19Array(b2_dec);
+    vector<int> prod2 = multArrays(a2_base19, b2_base19);
+    cout << "mult(" << a2_dec << " -> " << arrayToBase19String(a2_base19)
+         << ", " << b2_dec << " -> " << arrayToBase19String(b2_base19)
+         << ") = " << arrayToBase19String(prod2) << " (в 19-ричной)\n";
+    cout << "В десятичной системе: " << base19ArrayToDecimal(prod2) << endl;
+}
+
 int main() {
-mt19937 gen(static_cast<unsigned int>(time(0)));
+    setlocale(LC_ALL, "RUS");
+    testOperations();
+    testMultiplication();
 
-// Пример случайного генерирования чисел и их обработки
-int numLength;
-cout << "Введите длину случайного числа в base 19: ";
-cin >> numLength;
+    vector<int> n_values = { 128, 256, 512, 1024, 2048, 4096, 8192, 16384 };
+    ofstream outFile("tn_results_base19.txt");
+    cout << "\nИзмерение T(n) в base-19:\n";
+    mt19937 gen((unsigned)time(nullptr));
+    for (int n : n_values) {
+        vector<int> a = generateRandomBase19Number(n, gen), 
+                   b = generateRandomBase19Number(n, gen);
+        resetCounter();
+        multArrays(a, b);
+        int t_n = getOperationCount();
+        cout << "n = " << n << ", T(n) = " << t_n << "\n";
+        outFile << n << " " << t_n << "\n";
+    }
+    outFile.close();
+    cout << "\nРезультаты T(n) записаны в файл tn_results_base19.txt\n";
 
-vector<int> randomNum = generateRandomHexNumber(numLength, gen);
-cout << "Случайное число (base 19): " << arrayToHexString(randomNum) << endl;
-
-// Тестирование операций
-testOperations();
-
-// Пример перемножения чисел
-string firstNum, secondNum;
-cout << "\nВведите первое число (19-ричная система): ";
-cin >> firstNum;
-cout << "Введите второе число (19-ричная система): ";
-cin >> secondNum;
-
-vector<int> num1 = hexStringToArray(firstNum), num2 = hexStringToArray(secondNum);
-resetCounter();
-vector<int> product = multArrays(num1, num2);
-cout << "Произведение: " << arrayToHexString(product)
-    << " (Операций: " << getOperationCount() << ")\n";
-
-// Пример работы с десятичными числами
-string decimalStr;
-cout << "\nВведите десятичное число для преобразования в base 19: ";
-cin >> decimalStr;
-
-vector<int> hexArray = decimalStringToHexArray(decimalStr);
-cout << "Число в base 19: " << arrayToHexString(hexArray) << endl;
-
-long long decimalValue = hexArrayToDecimal(hexArray);
-cout << "Число в десятичной системе: " << decimalValue << endl;
-
-return 0;
+    return 0;
 }
